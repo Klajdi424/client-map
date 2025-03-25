@@ -6,37 +6,40 @@
     let map, userMarker, driverMarkers = [];
 
     function initMap() {
-      const defaultUserLoc = { lat: 51.5074, lng: -0.1278 };
+      const params = new URLSearchParams(window.location.search);
+      const userLoc = {
+        lat: parseFloat(params.get("userLat")) || 51.5074, 
+        lng: parseFloat(params.get("userLng")) || -0.1278
+      };
+
       map = new google.maps.Map(document.getElementById("map"), {
-        center: defaultUserLoc,
+        center: userLoc,
         zoom: 13,
         disableDefaultUI: true
       });
 
       userMarker = new google.maps.Marker({
-        position: defaultUserLoc,
+        position: userLoc,
         map: map,
-        icon: { url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png", scaledSize: new google.maps.Size(50, 50) }
+        icon: "https://raw.githubusercontent.com/Klajdi424/image/main/OIP__5_-removebg-preview.png"  // Red marker for user location
       });
 
-      addDrivers(defaultUserLoc);
-      
+      addDrivers(userLoc);
+
       const bounds = new google.maps.LatLngBounds();
-      bounds.extend(defaultUserLoc);
+      bounds.extend(userLoc);
       driverMarkers.forEach(marker => bounds.extend(marker.getPosition()));
       map.fitBounds(bounds);
-      
-      setInterval(simulateDriverMovement, 2000);
     }
 
     function addDrivers(userLoc) {
       const categories = [
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png", count: 5 }
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png", count: 5 }, // Motorcycle
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png", count: 5 }, // Van
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png", count: 5 }, // Bicycle
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png", count: 5 }  // Car
       ];
-      
+
       categories.forEach(cat => {
         for (let i = 0; i < cat.count; i++) {
           const offsetLat = (Math.random() - 0.5) * 0.02;
@@ -47,44 +50,9 @@
             map: map,
             icon: { url: cat.icon, scaledSize: new google.maps.Size(50, 50) }
           });
-          driverMarkers.push({ marker, lat: driverLoc.lat, lng: driverLoc.lng });
+          driverMarkers.push(marker);
         }
       });
-    }
-
-    function simulateDriverMovement() {
-      driverMarkers.forEach(driver => {
-        const deltaLat = (Math.random() - 0.5) * 0.001;
-        const deltaLng = (Math.random() - 0.5) * 0.001;
-        const newLat = driver.lat + deltaLat;
-        const newLng = driver.lng + deltaLng;
-
-        smoothMoveMarker(driver.marker, { lat: newLat, lng: newLng });
-
-        driver.lat = newLat;
-        driver.lng = newLng;
-      });
-    }
-
-    function smoothMoveMarker(marker, newPosition) {
-      const oldPosition = marker.getPosition();
-      const frames = 30;
-      let count = 0;
-      
-      const deltaLat = (newPosition.lat - oldPosition.lat()) / frames;
-      const deltaLng = (newPosition.lng - oldPosition.lng()) / frames;
-      
-      const interval = setInterval(() => {
-        count++;
-        const nextLat = oldPosition.lat() + deltaLat * count;
-        const nextLng = oldPosition.lng() + deltaLng * count;
-        
-        marker.setPosition(new google.maps.LatLng(nextLat, nextLng));
-        
-        if (count >= frames) {
-          clearInterval(interval);
-        }
-      }, 50);
     }
   </script>
   <style>
