@@ -3,77 +3,50 @@
 <head>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDESOPDnAmfX5e5qqWc0Smy6kpj3kfN_J0" async defer></script>
   <script>
-    let map, userMarker;
-    let driverMarkers = [];
+    let map, userMarker, driverMarkers = [];
 
     function initMap() {
-      const defaultLoc = { lat: 51.5074, lng: -0.1278 };
+      const defaultUserLoc = { lat: 51.5074, lng: -0.1278 };
       map = new google.maps.Map(document.getElementById("map"), {
-        center: defaultLoc,
-        zoom: 14,
+        center: defaultUserLoc,
+        zoom: 13,
         disableDefaultUI: true
       });
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            const userLoc = {
-              lat: position.coords.latitude,
-              lng: position.coords.longitude
-            };
-            map.setCenter(userLoc);
-            addUserMarker(userLoc);
-            addDrivers(userLoc);
-          },
-          (error) => {
-            addUserMarker(defaultLoc);
-            addDrivers(defaultLoc);
-          }
-        );
-      } else {
-        addUserMarker(defaultLoc);
-        addDrivers(defaultLoc);
-      }
-    }
 
-    function addUserMarker(loc) {
       userMarker = new google.maps.Marker({
-        position: loc,
+        position: defaultUserLoc,
         map: map,
         icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png"
       });
+
+      addDrivers(defaultUserLoc);
+      
+      const bounds = new google.maps.LatLngBounds();
+      bounds.extend(defaultUserLoc);
+      driverMarkers.forEach(marker => bounds.extend(marker.getPosition()));
+      map.fitBounds(bounds);
     }
 
     function addDrivers(userLoc) {
-      // Array of categories with their custom icons and driver count
       const categories = [
         { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/bicycle.png", count: 5 },
         { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/motor.png", count: 5 },
         { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/car.png", count: 5 },
         { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/van.png", count: 5 }
       ];
-      
-      const bounds = new google.maps.LatLngBounds();
-      bounds.extend(userLoc);
-      
       categories.forEach(cat => {
         for (let i = 0; i < cat.count; i++) {
-          // Adjust the offset multiplier to control the spread of markers
           const offsetLat = (Math.random() - 0.5) * 0.02;
           const offsetLng = (Math.random() - 0.5) * 0.02;
           const driverLoc = { lat: userLoc.lat + offsetLat, lng: userLoc.lng + offsetLng };
-          let marker = new google.maps.Marker({
+          const marker = new google.maps.Marker({
             position: driverLoc,
             map: map,
-            icon: {
-              url: cat.icon,
-              scaledSize: new google.maps.Size(60, 60)
-            }
+            icon: { url: cat.icon, scaledSize: new google.maps.Size(60, 60) }
           });
           driverMarkers.push(marker);
-          bounds.extend(driverLoc);
         }
       });
-      map.fitBounds(bounds);
     }
   </script>
   <style>
