@@ -29,10 +29,10 @@
 
     function addDrivers(userLoc) {
       const categories = [
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/bicycle.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/motor.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/car.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/van.png", count: 5 }
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 }
       ];
       categories.forEach(cat => {
         for (let i = 0; i < cat.count; i++) {
@@ -42,7 +42,7 @@
           const marker = new google.maps.Marker({
             position: driverLoc,
             map: map,
-            icon: { url: cat.icon, scaledSize: new google.maps.Size(60, 60) }
+            icon: { url: cat.icon, scaledSize: new google.maps.Size(50, 50) }
           });
           driverMarkers.push(marker);
         }
