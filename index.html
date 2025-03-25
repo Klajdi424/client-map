@@ -16,7 +16,7 @@
       userMarker = new google.maps.Marker({
         position: defaultUserLoc,
         map: map,
-        icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png"
+        icon: { url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png", scaledSize: new google.maps.Size(50, 50) }
       });
 
       addDrivers(defaultUserLoc);
@@ -25,15 +25,18 @@
       bounds.extend(defaultUserLoc);
       driverMarkers.forEach(marker => bounds.extend(marker.getPosition()));
       map.fitBounds(bounds);
+      
+      setInterval(simulateDriverMovement, 2000);
     }
 
     function addDrivers(userLoc) {
       const categories = [
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 },
-        { icon: "https://raw.githubusercontent.com/Klajdi424/image/main/pickup2.png", count: 5 }
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png", count: 5 },
+        { icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png", count: 5 }
       ];
+      
       categories.forEach(cat => {
         for (let i = 0; i < cat.count; i++) {
           const offsetLat = (Math.random() - 0.5) * 0.02;
@@ -44,9 +47,44 @@
             map: map,
             icon: { url: cat.icon, scaledSize: new google.maps.Size(50, 50) }
           });
-          driverMarkers.push(marker);
+          driverMarkers.push({ marker, lat: driverLoc.lat, lng: driverLoc.lng });
         }
       });
+    }
+
+    function simulateDriverMovement() {
+      driverMarkers.forEach(driver => {
+        const deltaLat = (Math.random() - 0.5) * 0.001;
+        const deltaLng = (Math.random() - 0.5) * 0.001;
+        const newLat = driver.lat + deltaLat;
+        const newLng = driver.lng + deltaLng;
+
+        smoothMoveMarker(driver.marker, { lat: newLat, lng: newLng });
+
+        driver.lat = newLat;
+        driver.lng = newLng;
+      });
+    }
+
+    function smoothMoveMarker(marker, newPosition) {
+      const oldPosition = marker.getPosition();
+      const frames = 30;
+      let count = 0;
+      
+      const deltaLat = (newPosition.lat - oldPosition.lat()) / frames;
+      const deltaLng = (newPosition.lng - oldPosition.lng()) / frames;
+      
+      const interval = setInterval(() => {
+        count++;
+        const nextLat = oldPosition.lat() + deltaLat * count;
+        const nextLng = oldPosition.lng() + deltaLng * count;
+        
+        marker.setPosition(new google.maps.LatLng(nextLat, nextLng));
+        
+        if (count >= frames) {
+          clearInterval(interval);
+        }
+      }, 50);
     }
   </script>
   <style>
