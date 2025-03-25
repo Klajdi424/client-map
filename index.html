@@ -3,10 +3,12 @@
 <head>
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDESOPDnAmfX5e5qqWc0Smy6kpj3kfN_J0" async defer></script>
   <script>
-    let map, userMarker;
+    let map;
+    let directionsService;
     const driverRoutes = [];
-    const SPEED_MPH = 10; 
-    const SPEED_KM_S = 16.0934 / 3600; 
+    const DRIVERS_COUNT = 10;
+    const UPDATE_INTERVAL = 1000;
+    const STEP_INCREMENT = 1;
 
     function initMap() {
       const params = new URLSearchParams(window.location.search);
@@ -21,7 +23,7 @@
         disableDefaultUI: true
       });
 
-      userMarker = new google.maps.Marker({
+      new google.maps.Marker({
         position: userLoc,
         map: map,
         icon: {
@@ -30,52 +32,66 @@
         }
       });
 
-      const driverIcons = [
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
-      ];
+      directionsService = new google.maps.DirectionsService();
 
-      for (let i = 0; i < 20; i++) {
-        const radius = Math.random() * (0.02 - 0.005) + 0.005; 
-        const angle = Math.random() * 2 * Math.PI;
-        const icon = driverIcons[i % driverIcons.length];
-        const pos = {
-          lat: userLoc.lat + radius * Math.cos(angle),
-          lng: userLoc.lng + radius * Math.sin(angle)
-        };
-        const marker = new google.maps.Marker({
-          position: pos,
-          map: map,
-          icon: { url: icon, scaledSize: new google.maps.Size(50, 50) }
-        });
-        const angularSpeed = SPEED_KM_S / (radius * 111); 
-        driverRoutes.push({ marker, center: userLoc, radius, angle, angularSpeed });
+      for (let i = 0; i < DRIVERS_COUNT; i++) {
+        const start = randomPoint(userLoc, 0.01);
+        const end = randomPoint(userLoc, 0.01);
+        createDriverRoute(start, end);
       }
 
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(userLoc);
       driverRoutes.forEach(dr => {
-        const pos = {
-          lat: dr.center.lat + dr.radius * Math.cos(dr.angle),
-          lng: dr.center.lng + dr.radius * Math.sin(dr.angle)
-        };
-        bounds.extend(pos);
+        if (dr.routePoints && dr.routePoints.length)
+          bounds.extend(dr.routePoints[0]);
       });
       map.fitBounds(bounds);
 
-      setInterval(updateDriverPositions, 1000);
+      setInterval(updateDriverPositions, UPDATE_INTERVAL);
+    }
+
+    function randomPoint(center, range) {
+      return {
+        lat: center.lat + (Math.random() * 2 - 1) * range,
+        lng: center.lng + (Math.random() * 2 - 1) * range
+      };
+    }
+
+    function createDriverRoute(start, end) {
+      directionsService.route({
+        origin: start,
+        destination: end,
+        travelMode: google.maps.TravelMode.DRIVING
+      }, (result, status) => {
+        if (status === google.maps.DirectionsStatus.OK) {
+          const routePoints = result.routes[0].overview_path;
+          const marker = new google.maps.Marker({
+            position: routePoints[0],
+            map: map,
+            icon: { url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png", scaledSize: new google.maps.Size(50, 50) }
+          });
+          driverRoutes.push({ marker, routePoints, routeIndex: 0 });
+          new google.maps.Polyline({
+            path: routePoints,
+            strokeColor: "#0000FF",
+            strokeOpacity: 0.6,
+            strokeWeight: 4,
+            map: map
+          });
+        }
+      });
     }
 
     function updateDriverPositions() {
-      driverRoutes.forEach(route => {
-        route.angle += route.angularSpeed;
-        const newPos = {
-          lat: route.center.lat + route.radius * Math.cos(route.angle),
-          lng: route.center.lng + route.radius * Math.sin(route.angle)
-        };
-        route.marker.setPosition(new google.maps.LatLng(newPos.lat, newPos.lng));
+      driverRoutes.forEach(driver => {
+        if (driver.routePoints && driver.routePoints.length) {
+          driver.routeIndex += STEP_INCREMENT;
+          if (driver.routeIndex >= driver.routePoints.length) {
+            driver.routeIndex = 0;
+          }
+          driver.marker.setPosition(driver.routePoints[driver.routeIndex]);
+        }
       });
     }
   </script>
