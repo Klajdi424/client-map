@@ -88,7 +88,6 @@
       const deltaLat = (newPosition.lat - oldPosition.lat) / frames;
       const deltaLng = (newPosition.lng - oldPosition.lng) / frames;
 
-      
       const distance = calculateDistance(oldPosition, newPosition); 
       const timeToMove = (distance / SPEED_KMH) * MS_PER_HOUR; 
       const intervalTime = timeToMove / frames;
