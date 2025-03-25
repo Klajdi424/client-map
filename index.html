@@ -4,7 +4,11 @@
   <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDESOPDnAmfX5e5qqWc0Smy6kpj3kfN_J0" async defer></script>
   <script>
     let map, userMarker, driverMarkers = [], driverPositions = [];
-
+    
+    const SPEED_KMH = 15; 
+    const MS_PER_HOUR = 3600000; 
+    const LAT_LNG_TO_KM = 111; 
+    
     function initMap() {
       const params = new URLSearchParams(window.location.search);
       const userLoc = {
@@ -21,7 +25,10 @@
       userMarker = new google.maps.Marker({
         position: userLoc,
         map: map,
-        icon: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/images%20(9).jpg"
+        icon: {
+          url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/images%20(9).jpg",
+          scaledSize: new google.maps.Size(50, 50) 
+        }
       });
 
       addDrivers(userLoc);
@@ -64,7 +71,7 @@
         const oldPosition = driverPositions[index];
         const newPosition = getRandomLocation(oldPosition);
 
-        smoothMoveMarker(marker, newPosition);
+        smoothMoveMarker(marker, oldPosition, newPosition);
 
         driverPositions[index] = newPosition;
       });
@@ -76,25 +83,47 @@
       return { lat: oldPosition.lat + offsetLat, lng: oldPosition.lng + offsetLng };
     }
 
-    function smoothMoveMarker(marker, newPosition) {
-      const oldPosition = marker.getPosition();
-      const frames = 30;
+    function smoothMoveMarker(marker, oldPosition, newPosition) {
+      const frames = 100; 
+      const deltaLat = (newPosition.lat - oldPosition.lat) / frames;
+      const deltaLng = (newPosition.lng - oldPosition.lng) / frames;
+
+      
+      const distance = calculateDistance(oldPosition, newPosition); 
+      const timeToMove = (distance / SPEED_KMH) * MS_PER_HOUR; 
+      const intervalTime = timeToMove / frames;
+
       let count = 0;
-
-      const deltaLat = (newPosition.lat - oldPosition.lat()) / frames;
-      const deltaLng = (newPosition.lng - oldPosition.lng()) / frames;
-
       const interval = setInterval(() => {
         count++;
-        const nextLat = oldPosition.lat() + deltaLat * count;
-        const nextLng = oldPosition.lng() + deltaLng * count;
+        const nextLat = oldPosition.lat + deltaLat * count;
+        const nextLng = oldPosition.lng + deltaLng * count;
 
         marker.setPosition(new google.maps.LatLng(nextLat, nextLng));
 
         if (count >= frames) {
           clearInterval(interval);
         }
-      }, 50);
+      }, intervalTime);
+    }
+
+    function calculateDistance(pos1, pos2) {
+      const lat1 = pos1.lat;
+      const lon1 = pos1.lng;
+      const lat2 = pos2.lat;
+      const lon2 = pos2.lng;
+
+      const radlat1 = Math.PI * lat1 / 180;
+      const radlat2 = Math.PI * lat2 / 180;
+      const theta = lon1 - lon2;
+      const radtheta = Math.PI * theta / 180;
+      let dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
+      dist = Math.acos(dist);
+      dist = dist * 180 / Math.PI;
+      dist = dist * 60 * 1.1515; 
+      dist = dist * 1.609344; 
+
+      return dist;
     }
   </script>
   <style>
