@@ -5,9 +5,10 @@
   <script>
     let map, userMarker, driverMarkers = [], driverPositions = [];
     
-    const SPEED_KMH = 15; 
-    const MS_PER_HOUR = 3600000; 
-    const LAT_LNG_TO_KM = 111; 
+    const SPEED_KMH = 15;
+    const MS_PER_HOUR = 3600000;
+    const LAT_LNG_TO_KM = 111;
+    const FRAMES = 100;
     
     function initMap() {
       const params = new URLSearchParams(window.location.search);
@@ -27,7 +28,7 @@
         map: map,
         icon: {
           url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/images%20(9).jpg",
-          scaledSize: new google.maps.Size(50, 50) 
+          scaledSize: new google.maps.Size(50, 50)
         }
       });
 
@@ -84,13 +85,12 @@
     }
 
     function smoothMoveMarker(marker, oldPosition, newPosition) {
-      const frames = 100; 
-      const deltaLat = (newPosition.lat - oldPosition.lat) / frames;
-      const deltaLng = (newPosition.lng - oldPosition.lng) / frames;
+      const deltaLat = (newPosition.lat - oldPosition.lat) / FRAMES;
+      const deltaLng = (newPosition.lng - oldPosition.lng) / FRAMES;
 
-      const distance = calculateDistance(oldPosition, newPosition); 
-      const timeToMove = (distance / SPEED_KMH) * MS_PER_HOUR; 
-      const intervalTime = timeToMove / frames;
+      const distance = calculateDistance(oldPosition, newPosition);
+      const timeToMove = (distance / SPEED_KMH) * MS_PER_HOUR;
+      const intervalTime = timeToMove / FRAMES;
 
       let count = 0;
       const interval = setInterval(() => {
@@ -100,7 +100,7 @@
 
         marker.setPosition(new google.maps.LatLng(nextLat, nextLng));
 
-        if (count >= frames) {
+        if (count >= FRAMES) {
           clearInterval(interval);
         }
       }, intervalTime);
@@ -119,8 +119,8 @@
       let dist = Math.sin(radlat1) * Math.sin(radlat2) + Math.cos(radlat1) * Math.cos(radlat2) * Math.cos(radtheta);
       dist = Math.acos(dist);
       dist = dist * 180 / Math.PI;
-      dist = dist * 60 * 1.1515; 
-      dist = dist * 1.609344; 
+      dist = dist * 60 * 1.1515;
+      dist = dist * 1.609344;
 
       return dist;
     }
