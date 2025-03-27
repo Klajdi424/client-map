@@ -27,12 +27,12 @@
         zoom: 10,
         disableDefaultUI: true,
         styles: [
-          { elementType: 'geometry', stylers: [{ color: '#4B0082' }] }, // Base map color
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#4B0082' }] }, // Text stroke
-          { elementType: 'labels.text.fill', stylers: [{ color: '#FFD700' }] }, // Text fill in yellow
-          { featureType: 'water', stylers: [{ color: '#4B0082' }] }, // Water matches base map
-          { featureType: 'road', stylers: [{ color: '#FFD700' }] }, // Roads in yellow
-          { featureType: 'landscape', stylers: [{ color: '#4B0082' }] } // Landscape matches base map
+          { elementType: 'geometry', stylers: [{ color: '#4B0082' }] },
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#4B0082' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#FFD700' }] },
+          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFD700' }] },
+          { featureType: 'water', stylers: [{ color: '#4B0082' }] },
+          { featureType: 'landscape', stylers: [{ color: '#4B0082' }] }
         ]
       });
 
