@@ -7,8 +7,7 @@
     let directionsService;
     const driverRoutes = [];
     const DRIVERS_COUNT = 10;
-    const UPDATE_INTERVAL = 1000;
-    const STEP_INCREMENT = 1;
+    const UPDATE_INTERVAL = 3000; 
 
     function initMap() {
       const params = new URLSearchParams(window.location.search);
@@ -42,13 +41,15 @@
 
       const bounds = new google.maps.LatLngBounds();
       bounds.extend(userLoc);
-      driverRoutes.forEach(dr => {
-        if (dr.routePoints && dr.routePoints.length)
-          bounds.extend(dr.routePoints[0]);
+      driverRoutes.forEach(driver => {
+        if (driver.routePoints && driver.routePoints.length)
+          bounds.extend(driver.routePoints[0]);
       });
       map.fitBounds(bounds);
 
-      setInterval(updateDriverPositions, UPDATE_INTERVAL);
+      setInterval(() => {
+        driverRoutes.forEach(animateDriverMovement);
+      }, UPDATE_INTERVAL);
     }
 
     function randomPoint(center, range) {
@@ -69,30 +70,44 @@
           const marker = new google.maps.Marker({
             position: routePoints[0],
             map: map,
-            icon: { url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png", scaledSize: new google.maps.Size(50, 50) }
+            icon: {
+              url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png",
+              scaledSize: new google.maps.Size(50, 50)
+            }
           });
           driverRoutes.push({ marker, routePoints, routeIndex: 0 });
-          new google.maps.Polyline({
-            path: routePoints,
-            strokeColor: "#0000FF",
-            strokeOpacity: 0.6,
-            strokeWeight: 4,
-            map: map
-          });
         }
       });
     }
 
-    function updateDriverPositions() {
-      driverRoutes.forEach(driver => {
-        if (driver.routePoints && driver.routePoints.length) {
-          driver.routeIndex += STEP_INCREMENT;
-          if (driver.routeIndex >= driver.routePoints.length) {
-            driver.routeIndex = 0;
-          }
-          driver.marker.setPosition(driver.routePoints[driver.routeIndex]);
+    function animateDriverMovement(driver) {
+      if (driver.routePoints && driver.routePoints.length) {
+        const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
+        const nextPoint = driver.routePoints[nextIndex];
+        smoothMarkerTransition(driver.marker, driver.routePoints[driver.routeIndex], nextPoint);
+        driver.routeIndex = nextIndex;
+      }
+    }
+
+    function smoothMarkerTransition(marker, start, end) {
+      const steps = 30; 
+      const stepTime = UPDATE_INTERVAL / steps;
+      let stepCount = 0;
+
+      const latDelta = (end.lat() - start.lat()) / steps;
+      const lngDelta = (end.lng() - start.lng()) / steps;
+
+      const interval = setInterval(() => {
+        stepCount++;
+        const newLat = start.lat() + latDelta * stepCount;
+        const newLng = start.lng() + lngDelta * stepCount;
+
+        marker.setPosition({ lat: newLat, lng: newLng });
+
+        if (stepCount >= steps) {
+          clearInterval(interval);
         }
-      });
+      }, stepTime);
     }
   </script>
   <style>
