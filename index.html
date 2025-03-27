@@ -8,6 +8,12 @@
     const driverRoutes = [];
     const DRIVERS_COUNT = 10;
     const UPDATE_INTERVAL = 3000; 
+    const VEHICLE_IMAGES = [
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver1.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver2.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver3.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver4.png"
+    ];
 
     function initMap() {
       const params = new URLSearchParams(window.location.search);
@@ -18,7 +24,7 @@
 
       map = new google.maps.Map(document.getElementById("map"), {
         center: userLoc,
-        zoom: 13,
+        zoom: 11, 
         disableDefaultUI: true
       });
 
@@ -33,19 +39,12 @@
 
       directionsService = new google.maps.DirectionsService();
 
+      // Create routes for drivers
       for (let i = 0; i < DRIVERS_COUNT; i++) {
-        const start = randomPoint(userLoc, 0.01);
-        const end = randomPoint(userLoc, 0.01);
-        createDriverRoute(start, end);
+        const start = randomPoint(userLoc, 0.05); 
+        const end = randomPoint(userLoc, 0.05);
+        createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
       }
-
-      const bounds = new google.maps.LatLngBounds();
-      bounds.extend(userLoc);
-      driverRoutes.forEach(driver => {
-        if (driver.routePoints && driver.routePoints.length)
-          bounds.extend(driver.routePoints[0]);
-      });
-      map.fitBounds(bounds);
 
       setInterval(() => {
         driverRoutes.forEach(animateDriverMovement);
@@ -59,7 +58,7 @@
       };
     }
 
-    function createDriverRoute(start, end) {
+    function createDriverRoute(start, end, vehicleImageIndex) {
       directionsService.route({
         origin: start,
         destination: end,
@@ -71,7 +70,7 @@
             position: routePoints[0],
             map: map,
             icon: {
-              url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png",
+              url: VEHICLE_IMAGES[vehicleImageIndex], 
               scaledSize: new google.maps.Size(50, 50)
             }
           });
