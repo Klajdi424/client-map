@@ -18,14 +18,22 @@
     function initMap() {
       const params = new URLSearchParams(window.location.search);
       const userLoc = {
-        lat: parseFloat(params.get("userLat")) || 51.5074,
-        lng: parseFloat(params.get("userLng")) || -0.1278
+        lat: parseFloat(params.get("userLat")) || 41.1533,
+        lng: parseFloat(params.get("userLng")) || 20.1683
       };
 
       map = new google.maps.Map(document.getElementById("map"), {
         center: userLoc,
         zoom: 10,
-        disableDefaultUI: true
+        disableDefaultUI: true,
+        styles: [
+          { elementType: 'geometry', stylers: [{ color: '#4B0082' }] }, // Base map color
+          { elementType: 'labels.text.stroke', stylers: [{ color: '#4B0082' }] }, // Text stroke
+          { elementType: 'labels.text.fill', stylers: [{ color: '#FFD700' }] }, // Text fill in yellow
+          { featureType: 'water', stylers: [{ color: '#4B0082' }] }, // Water matches base map
+          { featureType: 'road', stylers: [{ color: '#FFD700' }] }, // Roads in yellow
+          { featureType: 'landscape', stylers: [{ color: '#4B0082' }] } // Landscape matches base map
+        ]
       });
 
       new google.maps.Marker({
