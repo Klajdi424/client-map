@@ -6,8 +6,8 @@
     let map;
     let directionsService;
     const driverRoutes = [];
-    const DRIVERS_COUNT = 10;
-    const UPDATE_INTERVAL = 3000; 
+    const DRIVERS_COUNT = 20;
+    const UPDATE_INTERVAL = 3000;
     const VEHICLE_IMAGES = [
       "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
       "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
@@ -24,7 +24,7 @@
 
       map = new google.maps.Map(document.getElementById("map"), {
         center: userLoc,
-        zoom: 11, 
+        zoom: 10,
         disableDefaultUI: true
       });
 
@@ -38,13 +38,16 @@
       });
 
       directionsService = new google.maps.DirectionsService();
+      const bounds = new google.maps.LatLngBounds();
 
-      // Create routes for drivers
       for (let i = 0; i < DRIVERS_COUNT; i++) {
         const start = randomPoint(userLoc, 0.05); 
         const end = randomPoint(userLoc, 0.05);
         createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
+        bounds.extend(start);
       }
+
+      map.fitBounds(bounds);
 
       setInterval(() => {
         driverRoutes.forEach(animateDriverMovement);
@@ -70,7 +73,7 @@
             position: routePoints[0],
             map: map,
             icon: {
-              url: VEHICLE_IMAGES[vehicleImageIndex], 
+              url: VEHICLE_IMAGES[vehicleImageIndex],
               scaledSize: new google.maps.Size(50, 50)
             }
           });
@@ -89,7 +92,7 @@
     }
 
     function smoothMarkerTransition(marker, start, end) {
-      const steps = 30; 
+      const steps = 30;
       const stepTime = UPDATE_INTERVAL / steps;
       let stepCount = 0;
 
