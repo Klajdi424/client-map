@@ -41,7 +41,7 @@
       const bounds = new google.maps.LatLngBounds();
 
       for (let i = 0; i < DRIVERS_COUNT; i++) {
-        const start = randomPoint(userLoc, 0.05); 
+        const start = randomPoint(userLoc, 0.05);
         const end = randomPoint(userLoc, 0.05);
         createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
         bounds.extend(start);
@@ -74,7 +74,8 @@
             map: map,
             icon: {
               url: VEHICLE_IMAGES[vehicleImageIndex],
-              scaledSize: new google.maps.Size(50, 50)
+              scaledSize: new google.maps.Size(50, 50),
+              anchor: new google.maps.Point(25, 25)
             }
           });
           driverRoutes.push({ marker, routePoints, routeIndex: 0 });
@@ -86,9 +87,34 @@
       if (driver.routePoints && driver.routePoints.length) {
         const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
         const nextPoint = driver.routePoints[nextIndex];
+        rotateMarker(driver.marker, driver.routePoints[driver.routeIndex], nextPoint);
         smoothMarkerTransition(driver.marker, driver.routePoints[driver.routeIndex], nextPoint);
         driver.routeIndex = nextIndex;
       }
+    }
+
+    function rotateMarker(marker, start, end) {
+      const angle = calculateBearing(start, end);
+      marker.setIcon({
+        url: marker.getIcon().url,
+        scaledSize: new google.maps.Size(50, 50),
+        anchor: new google.maps.Point(25, 25),
+        rotation: angle
+      });
+    }
+
+    function calculateBearing(start, end) {
+      const startLat = start.lat() * Math.PI / 180;
+      const startLng = start.lng() * Math.PI / 180;
+      const endLat = end.lat() * Math.PI / 180;
+      const endLng = end.lng() * Math.PI / 180;
+
+      const dLng = endLng - startLng;
+      const x = Math.sin(dLng) * Math.cos(endLat);
+      const y = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+      const bearing = Math.atan2(x, y) * 180 / Math.PI;
+
+      return (bearing + 360) % 360;
     }
 
     function smoothMarkerTransition(marker, start, end) {
