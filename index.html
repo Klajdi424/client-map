@@ -29,7 +29,7 @@
         styles: [
           { elementType: 'geometry', stylers: [{ color: '#4B0082' }] },
           { elementType: 'labels.text.stroke', stylers: [{ color: '#4B0082' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#FFD700' }] },
+          { elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] },
           { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#FFD700' }] },
           { featureType: 'water', stylers: [{ color: '#4B0082' }] },
           { featureType: 'landscape', stylers: [{ color: '#4B0082' }] }
@@ -138,20 +138,4 @@
         const newLat = start.lat() + latDelta * stepCount;
         const newLng = start.lng() + lngDelta * stepCount;
 
-        marker.setPosition({ lat: newLat, lng: newLng });
-
-        if (stepCount >= steps) {
-          clearInterval(interval);
-        }
-      }, stepTime);
-    }
-  </script>
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
-    #map { height: 100%; width: 100%; }
-  </style>
-</head>
-<body onload="initMap()">
-  <div id="map"></div>
-</body>
-</html>
+        marker.setPosition({ lat: newLat, lng
