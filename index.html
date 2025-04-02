@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
     let map;
-    const driverMarkers = [];
+    let driverMarkers = [];
     const DRIVERS_COUNT = 20;
-    const UPDATE_INTERVAL = 3000;
+    const UPDATE_INTERVAL = 5000;
     const VEHICLE_IMAGES = [
       "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
       "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
@@ -21,61 +21,68 @@
         lat: parseFloat(params.get("userLat")) || 41.1533,
         lng: parseFloat(params.get("userLng")) || 20.1683
       };
-      
-      map = L.map('map').setView([userLoc.lat, userLoc.lng], 10);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        subdomains: 'abcd'
+
+      map = L.map('map').setView(userLoc, 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
       }).addTo(map);
-      
-      L.marker([userLoc.lat, userLoc.lng], {
+
+      new L.marker(userLoc, {
         icon: L.icon({
           iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50]
         })
       }).addTo(map);
-      
-      for (let i = 0; i < DRIVERS_COUNT; i++) {
-        createDriver(randomPoint(userLoc, 0.05), i % VEHICLE_IMAGES.length);
-      }
 
-      setInterval(() => {
-        driverMarkers.forEach(animateDriver);
-      }, UPDATE_INTERVAL);
+      for (let i = 0; i < DRIVERS_COUNT; i++) {
+        const start = randomPoint(userLoc, 0.05);
+        createDriver(start, i % VEHICLE_IMAGES.length);
+      }
     }
-    
+
     function randomPoint(center, range) {
       return {
         lat: center.lat + (Math.random() * 2 - 1) * range,
         lng: center.lng + (Math.random() * 2 - 1) * range
       };
     }
-    
-    function createDriver(start, vehicleImageIndex) {
-      const marker = L.marker([start.lat, start.lng], {
+
+    function createDriver(position, vehicleImageIndex) {
+      const marker = L.marker(position, {
         icon: L.icon({
           iconUrl: VEHICLE_IMAGES[vehicleImageIndex],
           iconSize: [50, 50]
         })
       }).addTo(map);
-      
-      driverMarkers.push({ marker, destination: randomPoint(start, 0.05) });
+      driverMarkers.push({ marker, position, direction: randomPoint(position, 0.02) });
     }
-    
-    function animateDriver(driver) {
-      const { marker, destination } = driver;
-      const currentPos = marker.getLatLng();
-      const newLat = currentPos.lat + (destination.lat - currentPos.lat) / 30;
-      const newLng = currentPos.lng + (destination.lng - currentPos.lng) / 30;
-      marker.setLatLng([newLat, newLng]);
-      
-      if (Math.abs(newLat - destination.lat) < 0.0001 && Math.abs(newLng - destination.lng) < 0.0001) {
-        driver.destination = randomPoint(destination, 0.05);
-      }
+
+    function animateDrivers() {
+      driverMarkers.forEach(driver => {
+        const { marker, position, direction } = driver;
+        const latDelta = (direction.lat - position.lat) / 50;
+        const lngDelta = (direction.lng - position.lng) / 50;
+        let step = 0;
+
+        const interval = setInterval(() => {
+          step++;
+          position.lat += latDelta;
+          position.lng += lngDelta;
+          marker.setLatLng(position);
+
+          if (step >= 50) {
+            clearInterval(interval);
+            driver.direction = randomPoint(position, 0.02);
+          }
+        }, UPDATE_INTERVAL / 50);
+      });
     }
+
+    setInterval(animateDrivers, UPDATE_INTERVAL);
   </script>
   <style>
-    html, body { margin: 0; padding: 0; height: 100%; background: #1A1A1A; }
+    html, body { margin: 0; padding: 0; height: 100%; }
     #map { height: 100%; width: 100%; }
   </style>
 </head>
