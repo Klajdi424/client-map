@@ -1,66 +1,92 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OSM Live Driver Tracker</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <style>
-        body, html { margin: 0; padding: 0; height: 100%; }
-        #map { height: 100%; width: 100%; }
-    </style>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
+    let map;
+    let driverMarkers = [];
+    const DRIVERS_COUNT = 20;
+    const UPDATE_INTERVAL = 5000;
+    const VEHICLE_IMAGES = [
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
+      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
+    ];
+
+    function initMap() {
+      const params = new URLSearchParams(window.location.search);
+      const userLoc = {
+        lat: parseFloat(params.get("userLat")) || 41.1533,
+        lng: parseFloat(params.get("userLng")) || 20.1683
+      };
+
+      map = L.map('map').setView(userLoc, 13);
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+
+      new L.marker(userLoc, {
+        icon: L.icon({
+          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconSize: [50, 50]
+        })
+      }).addTo(map);
+
+      for (let i = 0; i < DRIVERS_COUNT; i++) {
+        const start = randomPoint(userLoc, 0.05);
+        createDriver(start, i % VEHICLE_IMAGES.length);
+      }
+    }
+
+    function randomPoint(center, range) {
+      return {
+        lat: center.lat + (Math.random() * 2 - 1) * range,
+        lng: center.lng + (Math.random() * 2 - 1) * range
+      };
+    }
+
+    function createDriver(position, vehicleImageIndex) {
+      const marker = L.marker(position, {
+        icon: L.icon({
+          iconUrl: VEHICLE_IMAGES[vehicleImageIndex],
+          iconSize: [50, 50]
+        })
+      }).addTo(map);
+      driverMarkers.push({ marker, position, direction: randomPoint(position, 0.02) });
+    }
+
+    function animateDrivers() {
+      driverMarkers.forEach(driver => {
+        const { marker, position, direction } = driver;
+        const latDelta = (direction.lat - position.lat) / 50;
+        const lngDelta = (direction.lng - position.lng) / 50;
+        let step = 0;
+
+        const interval = setInterval(() => {
+          step++;
+          position.lat += latDelta;
+          position.lng += lngDelta;
+          marker.setLatLng(position);
+
+          if (step >= 50) {
+            clearInterval(interval);
+            driver.direction = randomPoint(position, 0.02);
+          }
+        }, UPDATE_INTERVAL / 50);
+      });
+    }
+
+    setInterval(animateDrivers, UPDATE_INTERVAL);
+  </script>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; }
+    #map { height: 100%; width: 100%; }
+  </style>
 </head>
-<body>
-    <div id="map"></div>
-
-    <script>
-        const map = L.map("map").setView([51.5074, -0.1278], 12);
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
-
-        const vehicleIcon = L.icon({
-            iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png",
-            iconSize: [50, 50],
-            iconAnchor: [25, 25]
-        });
-
-        let driverMarker = L.marker([51.5074, -0.1278], { icon: vehicleIcon }).addTo(map);
-        let routePoints = [[51.5074, -0.1278], [51.5100, -0.1200], [51.5150, -0.1100], [51.5200, -0.1000]];
-        let routeIndex = 0;
-        const speed = 2000;
-
-        function moveDriver() {
-            if (routeIndex < routePoints.length) {
-                let start = routePoints[routeIndex];
-                let end = routePoints[(routeIndex + 1) % routePoints.length];
-                
-                smoothTransition(driverMarker, start, end);
-                routeIndex = (routeIndex + 1) % routePoints.length;
-                setTimeout(moveDriver, speed);
-            }
-        }
-
-        function smoothTransition(marker, start, end) {
-            let steps = 50;
-            let stepTime = speed / steps;
-            let stepCount = 0;
-            let latDelta = (end[0] - start[0]) / steps;
-            let lngDelta = (end[1] - start[1]) / steps;
-
-            let interval = setInterval(() => {
-                stepCount++;
-                let newLat = start[0] + latDelta * stepCount;
-                let newLng = start[1] + lngDelta * stepCount;
-
-                marker.setLatLng([newLat, newLng]);
-
-                if (stepCount >= steps) {
-                    clearInterval(interval);
-                }
-            }, stepTime);
-        }
-
-        moveDriver();
-    </script>
+<body onload="initMap()">
+  <div id="map"></div>
 </body>
 </html>
