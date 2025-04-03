@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
   <script>
     let map;
-    let driverMarkers = [];
-    const DRIVERS_COUNT = 20;
+    const driverMarkers = [];
+    const driverRoutes = [];
+    const DRIVERS_COUNT = 10;
     const UPDATE_INTERVAL = 5000;
     const VEHICLE_IMAGES = [
       "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
@@ -17,69 +18,72 @@
 
     function initMap() {
       const params = new URLSearchParams(window.location.search);
-      const userLoc = {
-        lat: parseFloat(params.get("userLat")) || 41.1533,
-        lng: parseFloat(params.get("userLng")) || 20.1683
-      };
+      const userLat = parseFloat(params.get("userLat")) || 41.1533;
+      const userLng = parseFloat(params.get("userLng")) || 20.1683;
 
-      map = L.map('map').setView(userLoc, 13);
+      map = L.map('map').setView([userLat, userLng], 13);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+        attribution: '© OpenStreetMap contributors'
       }).addTo(map);
 
-      new L.marker(userLoc, {
-        icon: L.icon({
-          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
-          iconSize: [50, 50]
-        })
+      L.circleMarker([userLat, userLng], {
+        color: "blue",
+        radius: 8,
+        fillColor: "white",
+        fillOpacity: 1
       }).addTo(map);
 
       for (let i = 0; i < DRIVERS_COUNT; i++) {
-        const start = randomPoint(userLoc, 0.05);
-        createDriver(start, i % VEHICLE_IMAGES.length);
+        const start = randomPoint(userLat, userLng, 0.05);
+        const end = randomPoint(userLat, userLng, 0.05);
+        createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
       }
+
+      setInterval(() => {
+        driverRoutes.forEach(animateDriverMovement);
+      }, UPDATE_INTERVAL);
     }
 
-    function randomPoint(center, range) {
-      return {
-        lat: center.lat + (Math.random() * 2 - 1) * range,
-        lng: center.lng + (Math.random() * 2 - 1) * range
-      };
+    function randomPoint(lat, lng, range) {
+      return [lat + (Math.random() * 2 - 1) * range, lng + (Math.random() * 2 - 1) * range];
     }
 
-    function createDriver(position, vehicleImageIndex) {
-      const marker = L.marker(position, {
+    function createDriverRoute(start, end, vehicleImageIndex) {
+      const marker = L.marker(start, {
         icon: L.icon({
           iconUrl: VEHICLE_IMAGES[vehicleImageIndex],
-          iconSize: [50, 50]
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
         })
       }).addTo(map);
-      driverMarkers.push({ marker, position, direction: randomPoint(position, 0.02) });
+
+      driverMarkers.push(marker);
+      driverRoutes.push({ marker, route: [start, end], routeIndex: 0 });
     }
 
-    function animateDrivers() {
-      driverMarkers.forEach(driver => {
-        const { marker, position, direction } = driver;
-        const latDelta = (direction.lat - position.lat) / 50;
-        const lngDelta = (direction.lng - position.lng) / 50;
-        let step = 0;
+    function animateDriverMovement(driver) {
+      const { marker, route, routeIndex } = driver;
+      if (route.length < 2) return;
 
-        const interval = setInterval(() => {
-          step++;
-          position.lat += latDelta;
-          position.lng += lngDelta;
-          marker.setLatLng(position);
+      const start = route[routeIndex];
+      const end = route[(routeIndex + 1) % route.length];
+      const steps = 50;
+      let step = 0;
 
-          if (step >= 50) {
-            clearInterval(interval);
-            driver.direction = randomPoint(position, 0.02);
-          }
-        }, UPDATE_INTERVAL / 50);
-      });
+      const interval = setInterval(() => {
+        step++;
+        const lat = start[0] + ((end[0] - start[0]) * step / steps);
+        const lng = start[1] + ((end[1] - start[1]) * step / steps);
+
+        marker.setLatLng([lat, lng]);
+
+        if (step >= steps) {
+          clearInterval(interval);
+          driver.routeIndex = (routeIndex + 1) % route.length;
+        }
+      }, UPDATE_INTERVAL / steps);
     }
-
-    setInterval(animateDrivers, UPDATE_INTERVAL);
   </script>
   <style>
     html, body { margin: 0; padding: 0; height: 100%; }
