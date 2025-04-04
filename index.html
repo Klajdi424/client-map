@@ -5,7 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
+    />
     <style>
       html,
       body {
@@ -42,10 +45,12 @@
         const userLoc = [userLat, userLng];
         map = L.map("map", { center: userLoc, zoom: 10, zoomControl: false });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         const userIcon = L.icon({
-          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl:
+            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
@@ -67,10 +72,7 @@
               iconSize: [50, 50],
               iconAnchor: [25, 25]
             });
-            const marker = L.marker(result.routePoints[0], {
-              icon: vehicleIcon,
-              rotationAngle: 0
-            }).addTo(map);
+            const marker = L.marker(result.routePoints[0], { icon: vehicleIcon }).addTo(map);
             driverRoutes.push({
               marker: marker,
               routePoints: result.routePoints,
@@ -112,25 +114,9 @@
           const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
           const currentPoint = driver.routePoints[driver.routeIndex];
           const nextPoint = driver.routePoints[nextIndex];
-          rotateMarker(driver.marker, currentPoint, nextPoint);
           smoothMarkerTransition(driver.marker, currentPoint, nextPoint);
           driver.routeIndex = nextIndex;
         }
-      }
-      function rotateMarker(marker, start, end) {
-        const angle = calculateBearing(start, end);
-        marker.setRotationAngle(angle);
-      }
-      function calculateBearing(start, end) {
-        const startLat = start.lat * Math.PI / 180;
-        const startLng = start.lng * Math.PI / 180;
-        const endLat = end.lat * Math.PI / 180;
-        const endLng = end.lng * Math.PI / 180;
-        const dLng = endLng - startLng;
-        const x = Math.sin(dLng) * Math.cos(endLat);
-        const y = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
-        const bearing = Math.atan2(x, y) * 180 / Math.PI;
-        return (bearing + 360) % 360;
       }
       function smoothMarkerTransition(marker, start, end) {
         const steps = 30;
