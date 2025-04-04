@@ -40,31 +40,44 @@
         const userLat = parseFloat(params.get("userLat")) || 41.1533;
         const userLng = parseFloat(params.get("userLng")) || 20.1683;
         const userLoc = [userLat, userLng];
-        map = L.map("map", {
-          center: userLoc,
-          zoom: 10,
-          zoomControl: false
-        });
+        map = L.map("map", { center: userLoc, zoom: 10, zoomControl: false });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
         const userIcon = L.icon({
-          iconUrl:
-            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
         L.marker(userLoc, { icon: userIcon }).addTo(map);
         const bounds = L.latLngBounds(userLoc, userLoc);
+        const routePromises = [];
         for (let i = 0; i < DRIVERS_COUNT; i++) {
           const start = randomPoint(userLoc, 0.05);
           const end = randomPoint(userLoc, 0.05);
-          createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
           bounds.extend([start.lat, start.lng]);
           bounds.extend([end.lat, end.lng]);
+          routePromises.push(createDriverRoute(start, end, i % VEHICLE_IMAGES.length));
         }
         map.fitBounds(bounds);
+        Promise.all(routePromises).then((results) => {
+          results.forEach((result) => {
+            const vehicleIcon = L.icon({
+              iconUrl: VEHICLE_IMAGES[result.vehicleImageIndex],
+              iconSize: [50, 50],
+              iconAnchor: [25, 25]
+            });
+            const marker = L.marker(result.routePoints[0], {
+              icon: vehicleIcon,
+              rotationAngle: 0
+            }).addTo(map);
+            driverRoutes.push({
+              marker: marker,
+              routePoints: result.routePoints,
+              routeIndex: 0
+            });
+          });
+        });
         setInterval(() => {
           driverRoutes.forEach(animateDriverMovement);
         }, UPDATE_INTERVAL);
@@ -76,32 +89,23 @@
         };
       }
       function createDriverRoute(start, end, vehicleImageIndex) {
-        const router = L.Routing.osrmv1();
-        router.route(
-          [
-            new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
-            new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
-          ],
-          function (err, routes) {
-            if (!err && routes && routes.length) {
-              const routePoints = routes[0].coordinates;
-              const vehicleIcon = L.icon({
-                iconUrl: VEHICLE_IMAGES[vehicleImageIndex],
-                iconSize: [50, 50],
-                iconAnchor: [25, 25]
-              });
-              const marker = L.marker(routePoints[0], {
-                icon: vehicleIcon,
-                rotationAngle: 0
-              }).addTo(map);
-              driverRoutes.push({
-                marker: marker,
-                routePoints: routePoints,
-                routeIndex: 0
-              });
+        return new Promise((resolve, reject) => {
+          const router = L.Routing.osrmv1();
+          router.route(
+            [
+              new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
+              new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
+            ],
+            function (err, routes) {
+              if (!err && routes && routes.length) {
+                const routePoints = routes[0].coordinates;
+                resolve({ routePoints: routePoints, vehicleImageIndex: vehicleImageIndex });
+              } else {
+                reject(err);
+              }
             }
-          }
-        );
+          );
+        });
       }
       function animateDriverMovement(driver) {
         if (driver.routePoints && driver.routePoints.length) {
@@ -139,9 +143,7 @@
           const newLat = start.lat + latDelta * stepCount;
           const newLng = start.lng + lngDelta * stepCount;
           marker.setLatLng([newLat, newLng]);
-          if (stepCount >= steps) {
-            clearInterval(interval);
-          }
+          if (stepCount >= steps) clearInterval(interval);
         }, stepTime);
       }
     </script>
