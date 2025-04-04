@@ -7,8 +7,16 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <style>
-      html, body { margin: 0; padding: 0; height: 100%; }
-      #map { height: 100%; width: 100%; }
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        height: 100%;
+        width: 100%;
+      }
     </style>
   </head>
   <body onload="initMap()">
@@ -19,14 +27,12 @@
       let map;
       const driverRoutes = [];
       const DRIVERS_COUNT = 20;
-      const UPDATE_INTERVAL = 2000;
       const VEHICLE_IMAGES = [
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
       ];
-      
       function initMap() {
         const params = new URLSearchParams(window.location.search);
         const userLat = parseFloat(params.get("userLat")) || 41.1533;
@@ -34,16 +40,16 @@
         const userLoc = [userLat, userLng];
         map = L.map("map", { center: userLoc, zoom: 10, zoomControl: false });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
-        
         const userIcon = L.icon({
-          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl:
+            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
         L.marker(userLoc, { icon: userIcon }).addTo(map);
-        
         const bounds = L.latLngBounds(userLoc, userLoc);
         const routePromises = [];
         for (let i = 0; i < DRIVERS_COUNT; i++) {
@@ -54,7 +60,6 @@
           routePromises.push(createDriverRoute(start, end, i % VEHICLE_IMAGES.length));
         }
         map.fitBounds(bounds);
-        
         Promise.all(routePromises).then((results) => {
           results.forEach((result) => {
             const vehicleIcon = L.icon({
@@ -63,64 +68,72 @@
               iconAnchor: [25, 25]
             });
             const marker = L.marker(result.routePoints[0], { icon: vehicleIcon }).addTo(map);
-            driverRoutes.push({
+            const driver = {
               marker: marker,
               routePoints: result.routePoints,
               routeIndex: 0
-            });
+            };
+            driverRoutes.push(driver);
+            moveDriver(driver);
           });
         });
-        
-        setInterval(() => {
-          driverRoutes.forEach(animateDriverMovement);
-        }, UPDATE_INTERVAL);
       }
-      
       function randomPoint(center, range) {
         return {
           lat: center[0] + (Math.random() * 2 - 1) * range,
           lng: center[1] + (Math.random() * 2 - 1) * range
         };
       }
-      
       function createDriverRoute(start, end, vehicleImageIndex) {
         return new Promise((resolve, reject) => {
-          const router = L.Routing.osrmv1({
-            serviceUrl: "https://router.project-osrm.org/route/v1"
-          });
+          const router = L.Routing.osrmv1({ serviceUrl: "https://router.project-osrm.org/route/v1" });
           router.route(
             [
               new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
               new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
             ],
-            function(err, routes) {
+            function (err, routes) {
               if (!err && routes && routes.length) {
                 const routePoints = routes[0].coordinates;
                 resolve({ routePoints: routePoints, vehicleImageIndex: vehicleImageIndex });
               } else {
-                resolve({ 
-                  routePoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)], 
-                  vehicleImageIndex: vehicleImageIndex 
-                });
+                resolve({ routePoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)], vehicleImageIndex: vehicleImageIndex });
               }
             }
           );
         });
       }
-      
-      function animateDriverMovement(driver) {
-        if (driver.routePoints && driver.routePoints.length) {
-          const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
-          const currentPoint = driver.routePoints[driver.routeIndex];
-          const nextPoint = driver.routePoints[nextIndex];
-          smoothMarkerTransition(driver.marker, currentPoint, nextPoint);
+      function moveDriver(driver) {
+        const route = driver.routePoints;
+        const currIndex = driver.routeIndex;
+        const nextIndex = (currIndex + 1) % route.length;
+        const currPoint = route[currIndex];
+        const nextPoint = route[nextIndex];
+        const duration = computeDuration(currPoint, nextPoint);
+        smoothMarkerTransition(driver.marker, currPoint, nextPoint, duration, function() {
           driver.routeIndex = nextIndex;
-        }
+          moveDriver(driver);
+        });
       }
-      
-      function smoothMarkerTransition(marker, start, end) {
+      function computeDuration(start, end) {
+        const d = computeDistance(start.lat, start.lng, end.lat, end.lng);
+        const speed = 10;
+        return (d / speed) * 1000;
+      }
+      function computeDistance(lat1, lng1, lat2, lng2) {
+        const R = 6371000;
+        const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+        const Δφ = (lat2 - lat1) * Math.PI / 180;
+        const Δλ = (lng2 - lng1) * Math.PI / 180;
+        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+                  Math.cos(φ1) * Math.cos(φ2) *
+                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+      }
+      function smoothMarkerTransition(marker, start, end, duration, callback) {
         const steps = 30;
-        const stepTime = UPDATE_INTERVAL / steps;
+        const stepTime = duration / steps;
         let stepCount = 0;
         const latDelta = (end.lat - start.lat) / steps;
         const lngDelta = (end.lng - start.lng) / steps;
@@ -129,7 +142,10 @@
           const newLat = start.lat + latDelta * stepCount;
           const newLng = start.lng + lngDelta * stepCount;
           marker.setLatLng([newLat, newLng]);
-          if (stepCount >= steps) clearInterval(interval);
+          if (stepCount >= steps) {
+            clearInterval(interval);
+            if (callback) callback();
+          }
         }, stepTime);
       }
     </script>
