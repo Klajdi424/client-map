@@ -1,162 +1,151 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDESOPDnAmfX5e5qqWc0Smy6kpj3kfN_J0" async defer></script>
-  <script>
-    let map;
-    let directionsService;
-    const driverRoutes = [];
-    const DRIVERS_COUNT = 20;
-    const UPDATE_INTERVAL = 2000;
-    const VEHICLE_IMAGES = [
-      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
-      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
-      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
-      "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
-    ];
-
-    function initMap() {
-      const params = new URLSearchParams(window.location.search);
-      const userLoc = {
-        lat: parseFloat(params.get("userLat")) || 41.1533,
-        lng: parseFloat(params.get("userLng")) || 20.1683
-      };
-
-      map = new google.maps.Map(document.getElementById("map"), {
-        center: userLoc,
-        zoom: 10,
-        disableDefaultUI: true,
-        styles: [
-          { elementType: 'geometry', stylers: [{ color: '#2E2E2E' }] },
-          { elementType: 'labels.text.stroke', stylers: [{ color: '#2E2E2E' }] },
-          { elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] },
-          { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#8A2BE2' }] }, 
-          { featureType: 'water', stylers: [{ color: '#1A1A1A' }] }, 
-          { featureType: 'landscape.natural', stylers: [{ color: '#1A1A1A' }] }, 
-          { featureType: 'administrative', elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] }, 
-          { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] }, 
-          { featureType: 'locality', elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] },
-          { featureType: 'country', elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] }, 
-          { featureType: 'neighborhood', elementType: 'labels.text.fill', stylers: [{ color: '#FFFFFF' }] } 
-        ]
-      });
-
-      new google.maps.Marker({
-        position: userLoc,
-        map: map,
-        icon: {
-          url: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
-          scaledSize: new google.maps.Size(50, 50)
-        }
-      });
-
-      directionsService = new google.maps.DirectionsService();
-      const bounds = new google.maps.LatLngBounds();
-
-      for (let i = 0; i < DRIVERS_COUNT; i++) {
-        const start = randomPoint(userLoc, 0.05);
-        const end = randomPoint(userLoc, 0.05);
-        createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
-        bounds.extend(start);
+  <head>
+    <title>OSM Leaflet Driver Simulation</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
       }
-
-      map.fitBounds(bounds);
-
-      setInterval(() => {
-        driverRoutes.forEach(animateDriverMovement);
-      }, UPDATE_INTERVAL);
-    }
-
-    function randomPoint(center, range) {
-      return {
-        lat: center.lat + (Math.random() * 2 - 1) * range,
-        lng: center.lng + (Math.random() * 2 - 1) * range
-      };
-    }
-
-    function createDriverRoute(start, end, vehicleImageIndex) {
-      directionsService.route({
-        origin: start,
-        destination: end,
-        travelMode: google.maps.TravelMode.DRIVING
-      }, (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK) {
-          const routePoints = result.routes[0].overview_path;
-          const marker = new google.maps.Marker({
-            position: routePoints[0],
-            map: map,
-            icon: {
-              url: VEHICLE_IMAGES[vehicleImageIndex],
-              scaledSize: new google.maps.Size(50, 50),
-              anchor: new google.maps.Point(25, 25)
+      #map {
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body onload="initMap()">
+    <div id="map"></div>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
+    <script src="https://rawgit.com/bbecquet/Leaflet.RotatedMarker/master/leaflet.rotatedMarker.js"></script>
+    <script>
+      let map;
+      const driverRoutes = [];
+      const DRIVERS_COUNT = 20;
+      const UPDATE_INTERVAL = 2000;
+      const VEHICLE_IMAGES = [
+        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
+        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
+        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
+        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
+      ];
+      function initMap() {
+        const params = new URLSearchParams(window.location.search);
+        const userLat = parseFloat(params.get("userLat")) || 41.1533;
+        const userLng = parseFloat(params.get("userLng")) || 20.1683;
+        const userLoc = [userLat, userLng];
+        map = L.map("map", {
+          center: userLoc,
+          zoom: 10,
+          zoomControl: false
+        });
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+          subdomains: "abcd"
+        }).addTo(map);
+        const userIcon = L.icon({
+          iconUrl:
+            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconSize: [50, 50],
+          iconAnchor: [25, 25]
+        });
+        L.marker(userLoc, { icon: userIcon }).addTo(map);
+        const bounds = L.latLngBounds(userLoc, userLoc);
+        for (let i = 0; i < DRIVERS_COUNT; i++) {
+          const start = randomPoint(userLoc, 0.05);
+          const end = randomPoint(userLoc, 0.05);
+          createDriverRoute(start, end, i % VEHICLE_IMAGES.length);
+          bounds.extend([start.lat, start.lng]);
+          bounds.extend([end.lat, end.lng]);
+        }
+        map.fitBounds(bounds);
+        setInterval(() => {
+          driverRoutes.forEach(animateDriverMovement);
+        }, UPDATE_INTERVAL);
+      }
+      function randomPoint(center, range) {
+        return {
+          lat: center[0] + (Math.random() * 2 - 1) * range,
+          lng: center[1] + (Math.random() * 2 - 1) * range
+        };
+      }
+      function createDriverRoute(start, end, vehicleImageIndex) {
+        const router = L.Routing.osrmv1();
+        router.route(
+          [
+            new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
+            new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
+          ],
+          function (err, routes) {
+            if (!err && routes && routes.length) {
+              const routePoints = routes[0].coordinates;
+              const vehicleIcon = L.icon({
+                iconUrl: VEHICLE_IMAGES[vehicleImageIndex],
+                iconSize: [50, 50],
+                iconAnchor: [25, 25]
+              });
+              const marker = L.marker(routePoints[0], {
+                icon: vehicleIcon,
+                rotationAngle: 0
+              }).addTo(map);
+              driverRoutes.push({
+                marker: marker,
+                routePoints: routePoints,
+                routeIndex: 0
+              });
             }
-          });
-          driverRoutes.push({ marker, routePoints, routeIndex: 0 });
-        }
-      });
-    }
-
-    function animateDriverMovement(driver) {
-      if (driver.routePoints && driver.routePoints.length) {
-        const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
-        const nextPoint = driver.routePoints[nextIndex];
-        rotateMarker(driver.marker, driver.routePoints[driver.routeIndex], nextPoint);
-        smoothMarkerTransition(driver.marker, driver.routePoints[driver.routeIndex], nextPoint);
-        driver.routeIndex = nextIndex;
+          }
+        );
       }
-    }
-
-    function rotateMarker(marker, start, end) {
-      const angle = calculateBearing(start, end);
-      marker.setIcon({
-        url: marker.getIcon().url,
-        scaledSize: new google.maps.Size(50, 50),
-        anchor: new google.maps.Point(25, 25),
-        rotation: angle
-      });
-    }
-
-    function calculateBearing(start, end) {
-      const startLat = start.lat() * Math.PI / 180;
-      const startLng = start.lng() * Math.PI / 180;
-      const endLat = end.lat() * Math.PI / 180;
-      const endLng = end.lng() * Math.PI / 180;
-
-      const dLng = endLng - startLng;
-      const x = Math.sin(dLng) * Math.cos(endLat);
-      const y = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
-      const bearing = Math.atan2(x, y) * 180 / Math.PI;
-
-      return (bearing + 360) % 360;
-    }
-
-    function smoothMarkerTransition(marker, start, end) {
-      const steps = 30;
-      const stepTime = UPDATE_INTERVAL / steps;
-      let stepCount = 0;
-
-      const latDelta = (end.lat() - start.lat()) / steps;
-      const lngDelta = (end.lng() - start.lng()) / steps;
-
-      const interval = setInterval(() => {
-        stepCount++;
-        const newLat = start.lat() + latDelta * stepCount;
-        const newLng = start.lng() + lngDelta * stepCount;
-
-        marker.setPosition({ lat: newLat, lng: newLng });
-
-        if (stepCount >= steps) {
-          clearInterval(interval);
+      function animateDriverMovement(driver) {
+        if (driver.routePoints && driver.routePoints.length) {
+          const nextIndex = (driver.routeIndex + 1) % driver.routePoints.length;
+          const currentPoint = driver.routePoints[driver.routeIndex];
+          const nextPoint = driver.routePoints[nextIndex];
+          rotateMarker(driver.marker, currentPoint, nextPoint);
+          smoothMarkerTransition(driver.marker, currentPoint, nextPoint);
+          driver.routeIndex = nextIndex;
         }
-      }, stepTime);
-    }
-  </script>
-  <style>
-    html, body { margin: 0; padding: 0; height: 100%; }
-    #map { height: 100%; width: 100%; }
-  </style>
-</head>
-<body onload="initMap()">
-  <div id="map"></div>
-</body>
+      }
+      function rotateMarker(marker, start, end) {
+        const angle = calculateBearing(start, end);
+        marker.setRotationAngle(angle);
+      }
+      function calculateBearing(start, end) {
+        const startLat = start.lat * Math.PI / 180;
+        const startLng = start.lng * Math.PI / 180;
+        const endLat = end.lat * Math.PI / 180;
+        const endLng = end.lng * Math.PI / 180;
+        const dLng = endLng - startLng;
+        const x = Math.sin(dLng) * Math.cos(endLat);
+        const y = Math.cos(startLat) * Math.sin(endLat) - Math.sin(startLat) * Math.cos(endLat) * Math.cos(dLng);
+        const bearing = Math.atan2(x, y) * 180 / Math.PI;
+        return (bearing + 360) % 360;
+      }
+      function smoothMarkerTransition(marker, start, end) {
+        const steps = 30;
+        const stepTime = UPDATE_INTERVAL / steps;
+        let stepCount = 0;
+        const latDelta = (end.lat - start.lat) / steps;
+        const lngDelta = (end.lng - start.lng) / steps;
+        const interval = setInterval(() => {
+          stepCount++;
+          const newLat = start.lat + latDelta * stepCount;
+          const newLng = start.lng + lngDelta * stepCount;
+          marker.setLatLng([newLat, newLng]);
+          if (stepCount >= steps) {
+            clearInterval(interval);
+          }
+        }, stepTime);
+      }
+    </script>
+  </body>
 </html>
+```
