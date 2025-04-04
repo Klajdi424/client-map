@@ -1,22 +1,14 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>OSM Leaflet Driver Simulation</title>
+    <title>Adalo Webview Driver Simulation</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <style>
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-      }
-      #map {
-        height: 100%;
-        width: 100%;
-      }
+      html, body { margin: 0; padding: 0; height: 100%; }
+      #map { height: 100%; width: 100%; }
     </style>
   </head>
   <body onload="initMap()">
@@ -42,16 +34,16 @@
         const userLoc = [userLat, userLng];
         map = L.map("map", { center: userLoc, zoom: 10, zoomControl: false });
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        
         const userIcon = L.icon({
-          iconUrl:
-            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
         L.marker(userLoc, { icon: userIcon }).addTo(map);
+        
         const bounds = L.latLngBounds(userLoc, userLoc);
         const routePromises = [];
         for (let i = 0; i < DRIVERS_COUNT; i++) {
@@ -62,6 +54,7 @@
           routePromises.push(createDriverRoute(start, end, i % VEHICLE_IMAGES.length));
         }
         map.fitBounds(bounds);
+        
         Promise.all(routePromises).then((results) => {
           results.forEach((result) => {
             const vehicleIcon = L.icon({
@@ -77,6 +70,7 @@
             });
           });
         });
+        
         setInterval(() => {
           driverRoutes.forEach(animateDriverMovement);
         }, UPDATE_INTERVAL);
@@ -91,18 +85,23 @@
       
       function createDriverRoute(start, end, vehicleImageIndex) {
         return new Promise((resolve, reject) => {
-          const router = L.Routing.osrmv1();
+          const router = L.Routing.osrmv1({
+            serviceUrl: "https://router.project-osrm.org/route/v1"
+          });
           router.route(
             [
               new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
               new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
             ],
-            function (err, routes) {
+            function(err, routes) {
               if (!err && routes && routes.length) {
                 const routePoints = routes[0].coordinates;
                 resolve({ routePoints: routePoints, vehicleImageIndex: vehicleImageIndex });
               } else {
-                reject(err);
+                resolve({ 
+                  routePoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)], 
+                  vehicleImageIndex: vehicleImageIndex 
+                });
               }
             }
           );
