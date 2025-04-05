@@ -33,33 +33,41 @@
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
         "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
       ];
+      
       function initMap() {
         const params = new URLSearchParams(window.location.search);
         const userLat = parseFloat(params.get("userLat")) || 41.1533;
         const userLng = parseFloat(params.get("userLng")) || 20.1683;
         const userLoc = [userLat, userLng];
-        map = L.map("map", { center: userLoc, zoom: 10, zoomControl: false });
+
+        map = L.map("map", { 
+          center: userLoc, 
+          zoom: 14, 
+          zoomControl: false,
+          zoomAnimation: false,
+          fadeAnimation: false,
+          markerZoomAnimation: false
+        });
+        
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
             '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
+        
         const userIcon = L.icon({
-          iconUrl:
-            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
         L.marker(userLoc, { icon: userIcon }).addTo(map);
-        const bounds = L.latLngBounds(userLoc, userLoc);
+        
         const routePromises = [];
         for (let i = 0; i < DRIVERS_COUNT; i++) {
           const start = randomPoint(userLoc, 0.05);
           const end = randomPoint(userLoc, 0.05);
-          bounds.extend([start.lat, start.lng]);
-          bounds.extend([end.lat, end.lng]);
           routePromises.push(createDriverRoute(start, end, i % VEHICLE_IMAGES.length));
         }
-        map.fitBounds(bounds);
+        
         Promise.all(routePromises).then((results) => {
           results.forEach((result) => {
             const vehicleIcon = L.icon({
@@ -78,12 +86,14 @@
           });
         });
       }
+      
       function randomPoint(center, range) {
         return {
           lat: center[0] + (Math.random() * 2 - 1) * range,
           lng: center[1] + (Math.random() * 2 - 1) * range
         };
       }
+      
       function createDriverRoute(start, end, vehicleImageIndex) {
         return new Promise((resolve, reject) => {
           const router = L.Routing.osrmv1({ serviceUrl: "https://router.project-osrm.org/route/v1" });
@@ -103,6 +113,7 @@
           );
         });
       }
+      
       function moveDriver(driver) {
         const route = driver.routePoints;
         const currIndex = driver.routeIndex;
@@ -115,11 +126,13 @@
           moveDriver(driver);
         });
       }
+      
       function computeDuration(start, end) {
         const d = computeDistance(start.lat, start.lng, end.lat, end.lng);
-        const speed = 10;
+        const speed = 10; // meters per second
         return (d / speed) * 1000;
       }
+      
       function computeDistance(lat1, lng1, lat2, lng2) {
         const R = 6371000;
         const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
@@ -131,6 +144,7 @@
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
       }
+      
       function smoothMarkerTransition(marker, start, end, duration, callback) {
         const steps = 30;
         const stepTime = duration / steps;
