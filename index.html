@@ -16,7 +16,7 @@
       #map {
         height: 100%;
         width: 100%;
-      }
+      }      
     </style>
   </head>
   <body onload="initMap()">
@@ -40,14 +40,24 @@
         const userLng = parseFloat(params.get("userLng")) || 20.1683;
         const userLoc = [userLat, userLng];
         
-        // Create the map with default animations enabled
+        // Create map with zoom animations enabled
         map = L.map("map", { 
           center: userLoc, 
           zoom: 14,
-          zoomControl: false
+          zoomControl: false,
+          zoomAnimation: true,
+          markerZoomAnimation: true
         });
-        // Set the view initially without animation
+        // Set initial view without animation
         map.setView(userLoc, 14, { animate: false });
+        // Re-enable zoom animations shortly after initial load
+        setTimeout(function () {
+          map.options.zoomAnimation = true;
+          map.options.markerZoomAnimation = true;
+          if (map._zoomAnimated !== undefined) {
+            map._zoomAnimated = true;
+          }
+        }, 100);
         
         L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
           attribution:
@@ -141,9 +151,9 @@
         const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
         const Δφ = (lat2 - lat1) * Math.PI / 180;
         const Δλ = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+        const a = Math.sin(Δφ / 2) ** 2 +
                   Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+                  Math.sin(Δλ / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
       }
