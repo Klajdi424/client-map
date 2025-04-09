@@ -4,35 +4,24 @@
     <title>Adalo Webview Driver Simulation</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet/dist/leaflet.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
-    />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
     <style>
       html, body {
         margin: 0;
         padding: 0;
         height: 100%;
         background-color: black;
-        text-colour: white
+        color: white; /* White text for labels */
       }
       #map {
         height: 100%;
         width: 100%;
       }
-      /* Disable CSS transitions temporarily */
-      .no-zoom-animation .leaflet-map-pane,
-      .no-zoom-animation .leaflet-tile-pane {
-        transition: none !important;
-      }
     </style>
   </head>
   <body onload="initMap()">
-    <div id="map" class="no-zoom-animation"></div>
+    <div id="map"></div>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
     <script>
@@ -52,7 +41,7 @@
         const userLng = parseFloat(params.get("userLng")) || 20.1683;
         const userLoc = [userLat, userLng];
 
-        // Initialize map with zoom animations enabled overall
+        // Initialize map with animations enabled
         map = L.map("map", {
           center: userLoc,
           zoom: 14,
@@ -61,11 +50,16 @@
           markerZoomAnimation: true
         });
 
-        // Set initial view with no animation
+        // Set initial view without animation
         map.setView(userLoc, 14, { animate: false });
 
-        // Apply the dark map tile layer (black background, grey labels)
+        // Apply dark map tile layer (black background)
         L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          attribution: '&copy; OpenStreetMap & CartoDB contributors'
+        }).addTo(map);
+
+        // Overlay white text labels for roads and country names
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
           attribution: '&copy; OpenStreetMap & CartoDB contributors'
         }).addTo(map);
 
@@ -100,11 +94,6 @@
             moveDriver(driver);
           });
         });
-
-        // Remove the no-animation class after a short delay
-        setTimeout(() => {
-          document.getElementById("map").classList.remove("no-zoom-animation");
-        }, 500);
       }
 
       function randomPoint(center, range) {
