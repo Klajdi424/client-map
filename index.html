@@ -13,11 +13,11 @@
       href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css"
     />
     <style>
-      html,
-      body {
+      html, body {
         margin: 0;
         padding: 0;
         height: 100%;
+        background-color: black;
       }
       #map {
         height: 100%;
@@ -59,17 +59,17 @@
           zoomAnimation: true,
           markerZoomAnimation: true
         });
+
         // Set initial view with no animation
         map.setView(userLoc, 14, { animate: false });
 
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        // Apply the dark map tile layer (black background, grey labels)
+        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+          attribution: '&copy; OpenStreetMap & CartoDB contributors'
         }).addTo(map);
 
         const userIcon = L.icon({
-          iconUrl:
-            "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
+          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
           iconSize: [50, 50],
           iconAnchor: [25, 25]
         });
@@ -100,8 +100,7 @@
           });
         });
 
-        // Remove the no-animation class after a short delay so that
-        // manual interactions (like zoom) animate normally.
+        // Remove the no-animation class after a short delay
         setTimeout(() => {
           document.getElementById("map").classList.remove("no-zoom-animation");
         }, 500);
@@ -152,7 +151,7 @@
 
       function computeDuration(start, end) {
         const d = computeDistance(start.lat, start.lng, end.lat, end.lng);
-        const speed = 10; // meters per second
+        const speed = 10;
         return (d / speed) * 1000;
       }
 
@@ -166,24 +165,6 @@
                   Math.sin(Δλ / 2) ** 2;
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
-      }
-
-      function smoothMarkerTransition(marker, start, end, duration, callback) {
-        const steps = 30;
-        const stepTime = duration / steps;
-        let stepCount = 0;
-        const latDelta = (end.lat - start.lat) / steps;
-        const lngDelta = (end.lng - start.lng) / steps;
-        const interval = setInterval(() => {
-          stepCount++;
-          const newLat = start.lat + latDelta * stepCount;
-          const newLng = start.lng + lngDelta * stepCount;
-          marker.setLatLng([newLat, newLng]);
-          if (stepCount >= steps) {
-            clearInterval(interval);
-            if (callback) callback();
-          }
-        }, stepTime);
       }
     </script>
   </body>
