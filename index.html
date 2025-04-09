@@ -12,7 +12,7 @@
         padding: 0;
         height: 100%;
         background-color: black;
-        color: white; /* White text for labels */
+        color: white;
       }
       #map {
         height: 100%;
@@ -53,9 +53,9 @@
         // Set initial view without animation
         map.setView(userLoc, 14, { animate: false });
 
-        // Apply dark map tile layer (black background)
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-          attribution: '&copy; OpenStreetMap & CartoDB contributors'
+        // Apply tile layer with 2D buildings & dark theme
+        L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
+          attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
         // Overlay white text labels for roads and country names
