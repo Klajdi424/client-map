@@ -42,9 +42,9 @@
     map.fitBounds(bounds);
 
     // --- Add tile layer ---
-    L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{x}/{y}", {
-  attribution: "Tiles © Esri"
-}).addTo(map);
+   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+   attribution: "&copy; OpenStreetMap contributors"
+   }).addTo(map);
 
     // --- Add circle ---
     L.circle([LAT, LNG], {
