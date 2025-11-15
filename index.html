@@ -1,161 +1,62 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Adalo Webview Driver Simulation</title>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.css" />
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background-color: black;
-        color: white;
-      }
-      #map {
-        height: 100%;
-        width: 100%;
-      }
-    </style>
-  </head>
-  <body onload="initMap()">
-    <div id="map"></div>
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/leaflet-routing-machine/dist/leaflet-routing-machine.js"></script>
-    <script>
-      let map;
-      const driverRoutes = [];
-      const DRIVERS_COUNT = 20;
-      const VEHICLE_IMAGES = [
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__5_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__6_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/OIP__7_-removebg-preview.png",
-        "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/driver.png"
-      ];
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Map with Radius</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    crossorigin=""
+  />
+  <style>
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
 
-      function initMap() {
-        const params = new URLSearchParams(window.location.search);
-        const userLat = parseFloat(params.get("userLat")) || 41.1533;
-        const userLng = parseFloat(params.get("userLng")) || 20.1683;
-        const userLoc = [userLat, userLng];
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script>
+    // --- Helper: read query params ---
+    function getParam(name, defaultValue) {
+      const urlParams = new URLSearchParams(window.location.search);
+      return urlParams.get(name) || defaultValue;
+    }
 
-        // Initialize map with animations enabled
-        map = L.map("map", {
-          center: userLoc,
-          zoom: 14,
-          zoomControl: false,
-          zoomAnimation: true,
-          markerZoomAnimation: true
-        });
+    // --- Get values from URL or use defaults ---
+    const LAT = parseFloat(getParam("lat", "41.3275"));   // default: Tirana
+    const LNG = parseFloat(getParam("lng", "19.8189"));
+    const RADIUS = parseInt(getParam("radius", "1000"), 10);
 
-        // Set initial view without animation
-        map.setView(userLoc, 14, { animate: false });
+    // --- Calculate bounds with padding ---
+    const paddingFactor = RADIUS < 1000 ? 2.5 : 2.2;
+    const bounds = L.latLng(LAT, LNG).toBounds(RADIUS * paddingFactor);
 
-        // Apply tile layer with 2D buildings & dark theme
-        L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-          attribution: '&copy; OpenStreetMap contributors'
-        }).addTo(map);
+    // --- Init map and fit to bounds ---
+    const map = L.map("map");
+    map.fitBounds(bounds);
 
-        // Overlay white text labels for roads and country names
-        L.tileLayer("https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png", {
-          attribution: '&copy; OpenStreetMap & CartoDB contributors'
-        }).addTo(map);
+    // --- Add tile layer ---
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
 
-        const userIcon = L.icon({
-          iconUrl: "https://raw.githubusercontent.com/Klajdi424/image/refs/heads/main/Your_paragraph_text__4_-removebg-preview.png",
-          iconSize: [50, 50],
-          iconAnchor: [25, 25]
-        });
-        L.marker(userLoc, { icon: userIcon }).addTo(map);
+    // --- Add circle ---
+    L.circle([LAT, LNG], {
+      radius: RADIUS,
+      color: "#2563eb",
+      weight: 2,
+      fillColor: "#3b82f6",
+      fillOpacity: 0.25
+    }).addTo(map);
 
-        const routePromises = [];
-        for (let i = 0; i < DRIVERS_COUNT; i++) {
-          const start = randomPoint(userLoc, 0.05);
-          const end = randomPoint(userLoc, 0.05);
-          routePromises.push(createDriverRoute(start, end, i % VEHICLE_IMAGES.length));
-        }
-
-        Promise.all(routePromises).then((results) => {
-          results.forEach((result) => {
-            const vehicleIcon = L.icon({
-              iconUrl: VEHICLE_IMAGES[result.vehicleImageIndex],
-              iconSize: [50, 50],
-              iconAnchor: [25, 25]
-            });
-            const marker = L.marker(result.routePoints[0], { icon: vehicleIcon }).addTo(map);
-            const driver = {
-              marker: marker,
-              routePoints: result.routePoints,
-              routeIndex: 0
-            };
-            driverRoutes.push(driver);
-            moveDriver(driver);
-          });
-        });
-      }
-
-      function randomPoint(center, range) {
-        return {
-          lat: center[0] + (Math.random() * 2 - 1) * range,
-          lng: center[1] + (Math.random() * 2 - 1) * range
-        };
-      }
-
-      function createDriverRoute(start, end, vehicleImageIndex) {
-        return new Promise((resolve, reject) => {
-          const router = L.Routing.osrmv1({ serviceUrl: "https://router.project-osrm.org/route/v1" });
-          router.route(
-            [
-              new L.Routing.Waypoint(L.latLng(start.lat, start.lng)),
-              new L.Routing.Waypoint(L.latLng(end.lat, end.lng))
-            ],
-            function (err, routes) {
-              if (!err && routes && routes.length) {
-                const routePoints = routes[0].coordinates;
-                resolve({ routePoints: routePoints, vehicleImageIndex: vehicleImageIndex });
-              } else {
-                resolve({
-                  routePoints: [L.latLng(start.lat, start.lng), L.latLng(end.lat, end.lng)],
-                  vehicleImageIndex: vehicleImageIndex
-                });
-              }
-            }
-          );
-        });
-      }
-
-      function moveDriver(driver) {
-        const route = driver.routePoints;
-        const currIndex = driver.routeIndex;
-        const nextIndex = (currIndex + 1) % route.length;
-        const currPoint = route[currIndex];
-        const nextPoint = route[nextIndex];
-        const duration = computeDuration(currPoint, nextPoint);
-        smoothMarkerTransition(driver.marker, currPoint, nextPoint, duration, function () {
-          driver.routeIndex = nextIndex;
-          moveDriver(driver);
-        });
-      }
-
-      function computeDuration(start, end) {
-        const d = computeDistance(start.lat, start.lng, end.lat, end.lng);
-        const speed = 10;
-        return (d / speed) * 1000;
-      }
-
-      function computeDistance(lat1, lng1, lat2, lng2) {
-        const R = 6371000;
-        const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
-        const Δφ = (lat2 - lat1) * Math.PI / 180;
-        const Δλ = (lng2 - lng1) * Math.PI / 180;
-        const a = Math.sin(Δφ / 2) ** 2 +
-                  Math.cos(φ1) * Math.cos(φ2) *
-                  Math.sin(Δλ / 2) ** 2;
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        return R * c;
-      }
-    </script>
-  </body>
+    // --- Marker at center ---
+    L.marker([LAT, LNG]).addTo(map);
+  </script>
+</body>
 </html>
